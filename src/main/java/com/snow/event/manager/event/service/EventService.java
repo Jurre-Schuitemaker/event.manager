@@ -16,6 +16,7 @@ import com.snow.event.manager.seat.entity.SeatStatus;
 import com.snow.event.manager.seat.repository.SeatRepository;
 import com.snow.event.manager.user.entity.User;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -68,15 +69,66 @@ public class EventService {
             .orElseThrow(() ->
                 new RuntimeException("Event not found"));
 
+        int oldTotal = event.getTotalSeats();
+        int newTotal = request.getTotalSeats();
+
+        if (newTotal > oldTotal)
+        {
+            List<Seat> newSeats = new ArrayList<>();
+            for (int i = oldTotal + 1; i <= newTotal; i++)
+            {
+                newSeats.add(Seat.builder()
+                    .event(event)
+                    .seatNumber(i)
+                    .status(SeatStatus.AVAILABLE)
+                    .build());
+            }
+            seatRepository.saveAll(newSeats);
+        }
+        else if (newTotal < oldTotal)
+        {
+            List<Seat> seatsToRemove = seatRepository.findByEventIdAndSeatNumberGreaterThan(id, newTotal);
+    
+            boolean hasBookedSeats = seatsToRemove.stream()
+                .anyMatch(s -> s.getStatus() == SeatStatus.BOOKED 
+                            || s.getStatus() == SeatStatus.RESERVED);
+    
+            if (hasBookedSeats)
+            {
+                throw new RuntimeException(
+                    "Cannot reduce seats: seats above " + newTotal + " are booked or reserved");
+            }
+    
+            seatRepository.deleteAll(seatsToRemove);
+        }
+
+        long bookedCount = seatRepository.findByEventId(id).stream()
+            .filter(s -> s.getStatus() != SeatStatus.AVAILABLE)
+            .count();
+
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
         event.setLocation(request.getLocation());
         event.setDate(request.getDate());
-        event.setTotalSeats(request.getTotalSeats());
+        event.setTotalSeats(newTotal);
+        event.setAvailableSeats(newTotal - (int) bookedCount);
         event.setPrice(request.getPrice());
 
         Event updatedEvent = eventRepository.save(event);
-
         return EventMapper.toResponse(updatedEvent);
+    }
+
+    @Transactional
+    public void deleteEvent(Long id, User organizer)
+    {
+        Event event = eventRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Event not found"));
+    
+        if (!event.getOrganizer().getId().equals(organizer.getId()) && !organizer.isAdmin()) {
+            throw new RuntimeException("You are not the organizer of this event");
+        }
+    
+        seatRepository.deleteByEventId(event.getId());
+        eventRepository.delete(event);
     }
 }

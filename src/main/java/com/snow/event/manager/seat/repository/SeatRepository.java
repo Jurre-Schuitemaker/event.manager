@@ -11,4 +11,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long>
 {
     List<Seat> findByEventId(Long eventId);
     List<Seat> findByEventIdAndStatus(Long eventId, SeatStatus status);
+    List<Seat> findByEventIdAndSeatNumberGreaterThan(Long eventId, int seatNumber);
+
+    void deleteByEventId(Long eventId);
 }

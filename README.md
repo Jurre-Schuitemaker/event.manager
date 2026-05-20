@@ -170,6 +170,47 @@ Content-Type: application/json
 }
 ```
 
+#### Delete an event
+
+Only the event organizer or an admin can delete an event. Deletes all associated seats.
+
+```http
+DELETE /events/{id}
+Authorization: Bearer <token>
+```
+
+### Users
+
+#### Get a user
+
+```http
+GET /users/{id}
+Authorization: Bearer <token>
+```
+
+#### Update a user
+
+```http
+PUT /users/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "email": "jane@example.com"
+}
+```
+
+#### Delete a user
+
+Only the user themselves or an admin can delete a user.
+
+```http
+DELETE /users/{id}
+Authorization: Bearer <token>
+```
+
 ### Seats
 
 Seats are nested under events.

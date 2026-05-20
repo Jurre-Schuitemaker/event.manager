@@ -8,6 +8,7 @@ import com.snow.event.manager.user.entity.User;
 import com.snow.event.manager.user.mapper.UserMapper;
 import com.snow.event.manager.user.repository.UserRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -38,5 +39,15 @@ public class UserService
         User updatedUser = userRepository.save(user);
 
         return UserMapper.toResponse(updatedUser);
+    }
+
+    @Transactional
+    public void deleteUser(Long id, User currentUser)
+    {
+        if (!id.equals(currentUser.getId()) && !currentUser.isAdmin()) {
+            throw new RuntimeException("You can only delete your own account");
+        }
+
+        userRepository.deleteById(id);
     }
 }
