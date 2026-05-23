@@ -36,7 +36,27 @@ This starts:
 | Redis      | 6379          |
 | RabbitMQ   | 5672 / 15672  |
 
-### 2. Build the Project
+### 2. Configure Environment Variables
+
+Create a `.env` file in the project root (this file is gitignored):
+
+```
+JWT_SECRET=<your-256-bit-secret>
+```
+
+Example of generating a secret with PowerShell:
+
+```powershell
+-join ((1..64) | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })
+```
+
+Example of generating a secret with Linux/macOS:
+
+```bash
+openssl rand -hex 32
+```
+
+### 3. Build the Project
 
 ```bash
 ./mvnw compile
@@ -48,7 +68,7 @@ On Windows:
 .\mvnw.cmd compile
 ```
 
-### 3. Run the Application
+### 4. Run the Application
 
 ```bash
 ./mvnw spring-boot:run
@@ -62,7 +82,7 @@ On Windows:
 
 The app starts on **http://localhost:8080**.
 
-### 4. Authentication
+### 5. Authentication
 
 The API uses **JWT-based stateless authentication**. Public endpoints live under `/auth/**`.
 
@@ -249,6 +269,7 @@ Application settings are in `src/main/resources/application.yaml`:
 | `spring.data.redis.port`      | `6379`                                      |
 | `spring.rabbitmq.host`        | `localhost`                                 |
 | `spring.rabbitmq.port`        | `5672`                                      |
+| `jwt.secret`                  | `${JWT_SECRET}` (from `.env`)               |
 
 ## Running Tests
 
