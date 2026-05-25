@@ -22,13 +22,11 @@ public class CreateEventRequest
     @NotBlank
     private String location;
 
-    @NotBlank
     private LocalDateTime date;
 
     @Min(1)
     private int totalSeats;
 
     @PositiveOrZero
-    @NotBlank
     private BigDecimal price;
 }

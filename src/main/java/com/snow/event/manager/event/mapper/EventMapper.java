@@ -16,7 +16,9 @@ public class EventMapper
                 .availableSeats(event.getAvailableSeats())
                 .price(event.getPrice())
                 .date(event.getDate())
-                .organizer(event.getOrganizer())
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
+                .organizerId(event.getOrganizer().getId())
                 .build();
     }
 }

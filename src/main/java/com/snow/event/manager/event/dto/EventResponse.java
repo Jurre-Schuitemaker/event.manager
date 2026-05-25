@@ -3,7 +3,7 @@ package com.snow.event.manager.event.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.snow.event.manager.user.entity.User;
+import com.snow.event.manager.user.dto.UserResponse;
 
 import lombok.*;
 
@@ -33,5 +33,5 @@ public class EventResponse
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private User organizer;
+    private Long organizerId;
 }

@@ -42,7 +42,6 @@ public class Event
     private int availableSeats;
 
     @PositiveOrZero
-    @NotBlank
     private BigDecimal price;
 
     @ManyToOne(fetch = FetchType.LAZY)
