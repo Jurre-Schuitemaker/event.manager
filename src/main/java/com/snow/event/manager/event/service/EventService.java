@@ -9,6 +9,7 @@ import com.snow.event.manager.event.dto.CreateEventRequest;
 import com.snow.event.manager.event.dto.EventResponse;
 import com.snow.event.manager.event.dto.UpdateEventRequest;
 import com.snow.event.manager.event.entity.Event;
+import com.snow.event.manager.event.entity.SeatingType;
 import com.snow.event.manager.event.mapper.EventMapper;
 import com.snow.event.manager.event.repository.EventRepository;
 import com.snow.event.manager.seat.entity.Seat;
@@ -35,21 +36,23 @@ public class EventService {
             .totalSeats(request.getTotalSeats())
             .availableSeats(request.getTotalSeats())
             .price(request.getPrice())
+            .seatingType(request.getSeatingType())
             .organizer(organizer)
             .build();
  
         Event savedEvent = eventRepository.save(event);
  
-        List<Seat> seats = new ArrayList<>();
-        for (int i = 1; i <= savedEvent.getTotalSeats(); i++)
-        {
-            seats.add(Seat.builder()
-                .event(savedEvent)
-                .seatNumber(i)
-                .status(SeatStatus.AVAILABLE)
-                .build());
+       if (savedEvent.getSeatingType() == SeatingType.ASSIGNED) {
+            List<Seat> seats = new ArrayList<>();
+            for (int i = 1; i <= savedEvent.getTotalSeats(); i++) {
+                seats.add(Seat.builder()
+                    .event(savedEvent)
+                    .seatNumber(i)
+                    .status(SeatStatus.AVAILABLE)
+                    .build());
+            }
+            seatRepository.saveAll(seats);
         }
-        seatRepository.saveAll(seats);
  
         return EventMapper.toResponse(savedEvent);
     }
@@ -72,46 +75,55 @@ public class EventService {
         int oldTotal = event.getTotalSeats();
         int newTotal = request.getTotalSeats();
 
-        if (newTotal > oldTotal)
+        if (event.getSeatingType() == SeatingType.ASSIGNED)
         {
-            List<Seat> newSeats = new ArrayList<>();
-            for (int i = oldTotal + 1; i <= newTotal; i++)
+            if (newTotal > oldTotal)
             {
-                newSeats.add(Seat.builder()
-                    .event(event)
-                    .seatNumber(i)
-                    .status(SeatStatus.AVAILABLE)
-                    .build());
+                List<Seat> newSeats = new ArrayList<>();
+                for (int i = oldTotal + 1; i <= newTotal; i++)
+                {
+                    newSeats.add(Seat.builder()
+                        .event(event)
+                        .seatNumber(i)
+                        .status(SeatStatus.AVAILABLE)
+                        .build());
+                }
+                seatRepository.saveAll(newSeats);
             }
-            seatRepository.saveAll(newSeats);
-        }
-        else if (newTotal < oldTotal)
-        {
-            List<Seat> seatsToRemove = seatRepository.findByEventIdAndSeatNumberGreaterThan(id, newTotal);
-    
-            boolean hasBookedSeats = seatsToRemove.stream()
-                .anyMatch(s -> s.getStatus() == SeatStatus.BOOKED 
-                            || s.getStatus() == SeatStatus.RESERVED);
-    
-            if (hasBookedSeats)
+            else if (newTotal < oldTotal)
             {
-                throw new RuntimeException(
-                    "Cannot reduce seats: seats above " + newTotal + " are booked or reserved");
+                List<Seat> seatsToRemove = seatRepository.findByEventIdAndSeatNumberGreaterThan(id, newTotal);
+        
+                boolean hasBookedSeats = seatsToRemove.stream()
+                    .anyMatch(s -> s.getStatus() == SeatStatus.BOOKED 
+                                || s.getStatus() == SeatStatus.RESERVED);
+        
+                if (hasBookedSeats)
+                {
+                    throw new RuntimeException(
+                        "Cannot reduce seats: seats above " + newTotal + " are booked or reserved");
+                }
+        
+                seatRepository.deleteAll(seatsToRemove);
             }
-    
-            seatRepository.deleteAll(seatsToRemove);
-        }
 
-        long bookedCount = seatRepository.findByEventId(id).stream()
-            .filter(s -> s.getStatus() != SeatStatus.AVAILABLE)
-            .count();
+            long bookedCount = seatRepository.findByEventId(id).stream()
+                .filter(s -> s.getStatus() != SeatStatus.AVAILABLE)
+                .count();
+
+            event.setAvailableSeats(newTotal - (int) bookedCount);
+        }
+        else
+        {
+             int diff = newTotal - oldTotal;
+            event.setAvailableSeats(event.getAvailableSeats() + diff);
+        }
 
         event.setTitle(request.getTitle());
         event.setDescription(request.getDescription());
         event.setLocation(request.getLocation());
         event.setDate(request.getDate());
         event.setTotalSeats(newTotal);
-        event.setAvailableSeats(newTotal - (int) bookedCount);
         event.setPrice(request.getPrice());
 
         Event updatedEvent = eventRepository.save(event);

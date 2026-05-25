@@ -53,6 +53,13 @@ public class Event
  
     @NotNull
     private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private SeatingType seatingType;
+
+    @Version
+    private Long version;
  
     /* ---- Lifecycle ---- */
     @PrePersist

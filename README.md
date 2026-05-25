@@ -149,7 +149,12 @@ Authorization: Bearer <token>
 
 #### Create an event
 
-Creating an event automatically generates seats numbered 1 through `totalSeats`.
+Each event has a `seatingType`:
+
+| Seating Type         | Behaviour                                                    |
+|----------------------|--------------------------------------------------------------|
+| `ASSIGNED`           | Individual seat rows (1–`totalSeats`) are created on insert  |
+| `GENERAL_ADMISSION`  | No seat rows; availability is tracked via a counter          |
 
 ```http
 POST /events
@@ -157,12 +162,13 @@ Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "title": "Spring Conference",
-  "description": "Annual Spring Boot conference",
+  "title": "A generic conference",
+  "description": "A generic conference description",
   "location": "Amsterdam",
   "date": "2026-09-15T10:00:00",
   "totalSeats": 100,
-  "price": 49.99
+  "price": 49.99,
+  "seatingType": "ASSIGNED"
 }
 ```
 
@@ -311,7 +317,9 @@ src/main/java/com/snow/event/manager/
 │   │   ├── CreateEventRequest.java
 │   │   ├── EventResponse.java
 │   │   └── UpdateEventRequest.java
-│   ├── entity/Event.java
+│   ├── entity/
+│   │   ├── Event.java
+│   │   └── SeatingType.java
 │   ├── mapper/EventMapper.java
 │   ├── repository/EventRepository.java
 │   └── service/EventService.java
